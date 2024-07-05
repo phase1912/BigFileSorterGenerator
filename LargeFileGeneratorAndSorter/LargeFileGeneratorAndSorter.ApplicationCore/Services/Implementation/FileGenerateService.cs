@@ -9,27 +9,35 @@ public class FileGenerateService(ICustomStringWriterService customStringWriterSe
     
     public async Task Generate(string destinationPath, long maxFileSize, long stringLength)
     {
-        long totalSize = 0;
+        try
+        {
+            long totalSize = 0;
 
-        var destinationDir = Path.GetDirectoryName(destinationPath);
+            var destinationDir = Path.GetDirectoryName(destinationPath);
         
-        if (!Directory.Exists(destinationDir))
-        {
-            Directory.CreateDirectory(destinationDir);
-        }
+            if (!Directory.Exists(destinationDir))
+            {
+                Directory.CreateDirectory(destinationDir);
+            }
         
-        await using var stream = new FileStream(destinationPath, FileMode.OpenOrCreate, FileAccess.Write);
-        await using var streamWriter = new StreamWriter(stream);
+            await using var stream = new FileStream(destinationPath, FileMode.OpenOrCreate, FileAccess.Write);
+            await using var streamWriter = new StreamWriter(stream);
         
-        while (totalSize <= maxFileSize)
-        {
-            var list = GenerateBatchRandomStrings(stringLength);
-            var str = string.Join("\n", list);
+            while (totalSize <= maxFileSize)
+            {
+                var list = GenerateBatchRandomStrings(stringLength);
+                var str = string.Join("\n", list);
             
-            totalSize += await _customStringWriterService.WriteString(stream, streamWriter, str, Encoding.UTF8);
-        }
+                totalSize += await _customStringWriterService.WriteString(stream, streamWriter, str, Encoding.UTF8);
+            }
         
-        await streamWriter.FlushAsync();
+            await streamWriter.FlushAsync();
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            throw;
+        }
     }
 
     private List<string> GenerateBatchRandomStrings(long length = 1000)
